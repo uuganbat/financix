@@ -3,6 +3,9 @@ import { config } from "dotenv";
 // Load env before the db module evaluates (it reads DATABASE_URL at import).
 config({ path: ".env.local" });
 
+/** Dogfooding user email. Auth deferred — import code resolves the id by this. */
+export const DEV_USER_EMAIL = "dev@financix.local";
+
 type SeedCategory = {
   name: string;
   nameEn: string;
@@ -78,6 +81,27 @@ async function main() {
     .returning({ id: categories.id });
 
   console.log(`✓ Seeded ${result.length} system categories`);
+
+  // Dogfooding dev user — auth is deferred, but transactions/accounts FK
+  // to a user. Stable email so import code can resolve the id.
+  const { users } = await import("./schema");
+  const [devUser] = await db
+    .insert(users)
+    .values({
+      email: DEV_USER_EMAIL,
+      name: "Dev User",
+      locale: "mn",
+      currency: "MNT",
+    })
+    .onConflictDoNothing({ target: users.email })
+    .returning({ id: users.id });
+
+  if (devUser) {
+    console.log(`✓ Created dev user ${DEV_USER_EMAIL} (${devUser.id})`);
+  } else {
+    console.log(`✓ Dev user ${DEV_USER_EMAIL} already exists`);
+  }
+
   process.exit(0);
 }
 
