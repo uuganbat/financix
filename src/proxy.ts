@@ -25,8 +25,10 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip auth API, Next internals, and static assets.
+  // Skip ALL API routes (they self-gate and must return JSON 401, not
+  // an HTML redirect — the REST API is reused by the future Flutter
+  // client), plus Next internals and static assets.
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.svg).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.svg).*)",
   ],
 };

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { SignOutButton } from "./_components/sign-out-button";
@@ -25,13 +26,12 @@ export default async function Home() {
           <SignOutButton />
         </div>
 
-        <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          Нэвтэрсэн байна. Хуулга импортлох, ангилах урсгал одоогоор
-          <code className="mx-1 rounded bg-black/[.05] px-1.5 py-0.5 dark:bg-white/[.08]">
-            scripts/parse-sample.ts
-          </code>
-          дээр ажиллаж байгаа — веб дээрх импортын дэлгэц дараагийн алхам.
-        </p>
+        <Link
+          href="/import"
+          className="flex h-12 w-fit items-center justify-center rounded-full bg-foreground px-6 font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+        >
+          Хуулга импортлох →
+        </Link>
       </main>
     </div>
   );
