@@ -8,8 +8,14 @@
 
 import type { BankParser } from "./types";
 import { golomtParser } from "./golomt";
+import { mbankParser } from "./mbank";
+import { tdbParser } from "./tdb";
 
-export const PARSERS: readonly BankParser[] = [golomtParser];
+export const PARSERS: readonly BankParser[] = [
+  golomtParser, // .xlsx
+  mbankParser, // .xls (Oracle BIP)
+  tdbParser, // .xls (Crystal Reports)
+];
 
 export async function detectParser(
   file: Buffer,
