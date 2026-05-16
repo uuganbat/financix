@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Санхүү (Financix)
 
-## Getting Started
+Монголын хэрэглэгчдэд зориулсан хувийн санхүүгийн удирдлагын платформ. Банкны хуулга parse хийж, гүйлгээг ангилж, дашбоардаар харуулна.
 
-First, run the development server:
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router) + TypeScript + Tailwind CSS
+- **Database:** PostgreSQL 16 + Drizzle ORM
+- **API:** REST + OpenAPI (Next.js Route Handlers + Zod)
+- **Auth:** Auth.js (дараагийн commit)
+- **AI:** Claude Haiku (categorization fallback, opt-in)
+
+## Архитектурын шийдвэрүүд
+
+| Сэдэв | Шийдвэр | Шалтгаан |
+|-------|---------|----------|
+| API хэлбэр | REST + OpenAPI | Web + Flutter хоёуланд type-safe client codegen |
+| Account number | Зөвхөн сүүлийн 4 орон (`account_last4`) | Бүтэн дугаар хуулга файлд аль хэдийн бий — PII багасгана |
+| AI privacy | Layered: opt-in (default OFF) + shared cache + redaction | Cost ↓, latency ↓, privacy ↑ |
+| Dedup | `transactions.dedup_hash` дээр unique index | Ижил файл дахин upload хийхэд давхцал хаана |
+| Delete | Бүх үндсэн table-д `deleted_at` (soft delete) | Санхүүгийн дата санамсаргүй устгахаас хамгаална |
+
+## Setup
 
 ```bash
+# 1. Dependencies
+npm install
+
+# 2. Орчны хувьсагч
+cp .env.example .env.local
+
+# 3. Postgres асаах
+npm run db:up
+
+# 4. Schema-г DB рүү буулгах
+npm run db:migrate
+
+# 5. Dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## DB командууд
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Команд | Үйлдэл |
+|--------|--------|
+| `npm run db:up` | Docker дээр Postgres асаах |
+| `npm run db:down` | Postgres зогсоох |
+| `npm run db:generate` | Schema-аас SQL migration үүсгэх |
+| `npm run db:migrate` | Migration-уудыг DB рүү буулгах |
+| `npm run db:push` | Schema-г шууд push (dev зориулалт) |
+| `npm run db:studio` | Drizzle Studio (DB browser) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Бүтэц
 
-## Learn More
+```
+src/
+├── app/                # Next.js App Router
+└── db/
+    ├── schema/         # Drizzle schema (table бүр тусдаа файл)
+    ├── migrations/     # Generated SQL migrations
+    └── index.ts        # DB client
+```
 
-To learn more about Next.js, take a look at the following resources:
+Schema файлууд packages/ рүү гаргахад бэлэн зохион байгуулагдсан — Flutter/worker нэмэх үед refactor хийнэ.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Roadmap (Phase 1 — reduced MVP)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [x] Scaffold + DB schema + migrations
+- [ ] Auth (email)
+- [ ] Account + Transaction CRUD (manual entry)
+- [ ] Голомт parser
+- [ ] Rule-based categorization
+- [ ] Dashboard (энэ сар view)
