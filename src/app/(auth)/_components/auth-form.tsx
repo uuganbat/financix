@@ -24,6 +24,9 @@ const COPY = {
   },
 } as const;
 
+const inputCls =
+  "h-11 rounded-lg border border-border bg-background px-3 outline-none transition-colors focus:border-accent";
+
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const copy = COPY[mode];
@@ -55,40 +58,38 @@ export function AuthForm({ mode }: { mode: Mode }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-black/[.08] bg-white p-8 dark:border-white/[.145] dark:bg-black"
+      className="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-border bg-surface p-8"
     >
-      <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-        {copy.title}
-      </h1>
+      <h1 className="text-xl font-semibold tracking-tight">{copy.title}</h1>
 
       {mode === "register" && (
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-zinc-600 dark:text-zinc-400">Нэр</span>
+          <span className="text-muted">Нэр</span>
           <input
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
-            className="h-11 rounded-lg border border-black/[.12] bg-transparent px-3 outline-none focus:border-black dark:border-white/[.18] dark:focus:border-white"
+            className={inputCls}
           />
         </label>
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">И-мэйл</span>
+        <span className="text-muted">И-мэйл</span>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          className="h-11 rounded-lg border border-black/[.12] bg-transparent px-3 outline-none focus:border-black dark:border-white/[.18] dark:focus:border-white"
+          className={inputCls}
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-zinc-600 dark:text-zinc-400">Нууц үг</span>
+        <span className="text-muted">Нууц үг</span>
         <input
           type="password"
           required
@@ -98,27 +99,25 @@ export function AuthForm({ mode }: { mode: Mode }) {
           autoComplete={
             mode === "register" ? "new-password" : "current-password"
           }
-          className="h-11 rounded-lg border border-black/[.12] bg-transparent px-3 outline-none focus:border-black dark:border-white/[.18] dark:focus:border-white"
+          className={inputCls}
         />
       </label>
 
-      {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-negative">{error}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="h-11 rounded-full bg-foreground font-medium text-background transition-colors hover:bg-[#383838] disabled:opacity-60 dark:hover:bg-[#ccc]"
+        className="h-11 rounded-full bg-accent font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {pending ? "..." : copy.submit}
       </button>
 
-      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-center text-sm text-muted">
         {copy.alt}{" "}
         <Link
           href={copy.altHref}
-          className="font-medium text-zinc-950 underline dark:text-zinc-50"
+          className="font-medium text-accent hover:underline"
         >
           {copy.altLink}
         </Link>

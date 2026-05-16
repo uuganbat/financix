@@ -17,7 +17,7 @@ export function SignOutButton() {
         router.refresh();
       }}
       disabled={pending}
-      className="h-10 rounded-full border border-black/[.12] px-5 text-sm font-medium transition-colors hover:bg-black/[.04] disabled:opacity-60 dark:border-white/[.18] dark:hover:bg-[#1a1a1a]"
+      className="h-9 rounded-full border border-border px-4 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-60"
     >
       {pending ? "..." : "Гарах"}
     </button>

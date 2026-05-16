@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { ImportSummary } from "@/import/service";
 
-const fmt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+const tug = (n: number) =>
+  `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}₮`;
 
 export function ImportClient() {
   const [file, setFile] = useState<File | null>(null);
@@ -32,33 +34,42 @@ export function ImportClient() {
   }
 
   return (
-    <div className="flex w-full max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <form
         onSubmit={onSubmit}
-        className="flex flex-col gap-4 rounded-2xl border border-black/[.08] bg-white p-8 dark:border-white/[.145] dark:bg-black"
+        className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6"
       >
-        <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-          Хуулга импортлох
-        </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Голомт (.xlsx), М банк / ХХБ (.xls) хуулгын файл дэмжигдэнэ.
-        </p>
+        <div>
+          <h1 className="text-xl font-semibold">Хуулга импортлох</h1>
+          <p className="mt-1 text-sm text-muted">
+            Голомт (.xlsx), М банк / ХХБ (.xls) хуулгын файл дэмжинэ.
+            Давхардсан гүйлгээ автоматаар алгасна.
+          </p>
+        </div>
 
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="text-sm file:mr-4 file:rounded-full file:border-0 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-background"
-        />
+        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-surface-2 px-4 py-8 text-center transition-colors hover:border-accent">
+          <span className="text-sm font-medium">
+            {file ? file.name : "Файл сонгох"}
+          </span>
+          <span className="text-xs text-muted">
+            {file
+              ? `${(file.size / 1024).toFixed(0)} KB`
+              : ".xlsx, .xls"}
+          </span>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="hidden"
+          />
+        </label>
 
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
+        {error && <p className="text-sm text-negative">{error}</p>}
 
         <button
           type="submit"
           disabled={!file || pending}
-          className="h-11 w-fit rounded-full bg-foreground px-6 font-medium text-background transition-colors hover:bg-[#383838] disabled:opacity-60 dark:hover:bg-[#ccc]"
+          className="h-11 w-fit rounded-full bg-accent px-6 font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {pending ? "Боловсруулж байна…" : "Импортлох"}
         </button>
@@ -71,16 +82,16 @@ export function ImportClient() {
 
 function Results({ r }: { r: ImportSummary }) {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-black/[.08] bg-white p-8 text-sm dark:border-white/[.145] dark:bg-black">
+    <div className="flex flex-col gap-5 rounded-2xl border border-border bg-surface p-6 text-sm">
       {r.alreadyImported && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-          Энэ файлыг өмнө нь импортолсон байна — давхардлыг алгассан.
+        <p className="rounded-lg bg-surface-2 px-3 py-2 text-muted">
+          Энэ файлыг өмнө нь импортолсон — давхардлыг алгассан.
         </p>
       )}
 
-      <div className="flex flex-wrap gap-x-8 gap-y-2 text-zinc-700 dark:text-zinc-300">
+      <div className="flex flex-wrap gap-x-8 gap-y-1 text-muted">
         <span>
-          Банк: <b>{r.bank}</b>
+          Банк: <b className="text-foreground">{r.bank}</b>
           {r.accountLast4 ? ` ••••${r.accountLast4}` : ""}
         </span>
         {r.dateRange && (
@@ -92,42 +103,37 @@ function Results({ r }: { r: ImportSummary }) {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Stat label="Уншсан" value={r.parsed} />
-        <Stat label="Нэмсэн" value={r.imported} accent="text-green-600" />
+        <Stat label="Нэмсэн" value={r.imported} accent="text-positive" />
         <Stat label="Давхардсан" value={r.duplicates} />
         <Stat label="Алгассан" value={r.skipped} />
         <Stat label="Ангилаагүй" value={r.uncategorized} />
       </div>
 
       {r.byCategory.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <h2 className="font-medium text-black dark:text-zinc-50">
-            Ангилал
-          </h2>
-          <table className="w-full text-left">
-            <tbody>
-              {r.byCategory.map((c) => (
-                <tr
-                  key={c.category ?? "—"}
-                  className="border-b border-black/[.06] last:border-0 dark:border-white/[.08]"
-                >
-                  <td className="py-1.5 text-zinc-700 dark:text-zinc-300">
-                    {c.category ?? "Ангилаагүй"}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-zinc-500">
-                    {c.count}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-zinc-700 dark:text-zinc-300">
-                    {fmt(c.amount)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <table className="w-full text-left">
+          <tbody>
+            {r.byCategory.map((c) => (
+              <tr
+                key={c.category ?? "—"}
+                className="border-b border-border last:border-0"
+              >
+                <td className="py-2 text-muted">
+                  {c.category ?? "Ангилаагүй"}
+                </td>
+                <td className="py-2 text-right tabular-nums text-muted">
+                  {c.count}
+                </td>
+                <td className="py-2 text-right tabular-nums">
+                  {tug(c.amount)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
       {r.warnings.length > 0 && (
-        <details className="text-zinc-600 dark:text-zinc-400">
+        <details className="text-muted">
           <summary className="cursor-pointer">
             Сануулга ({r.warnings.length})
           </summary>
@@ -140,7 +146,7 @@ function Results({ r }: { r: ImportSummary }) {
       )}
 
       {r.errors.length > 0 && (
-        <details className="text-red-600 dark:text-red-400">
+        <details className="text-negative">
           <summary className="cursor-pointer">
             Алдаа ({r.errors.length})
           </summary>
@@ -151,6 +157,13 @@ function Results({ r }: { r: ImportSummary }) {
           </ul>
         </details>
       )}
+
+      <Link
+        href="/"
+        className="w-fit text-sm font-medium text-accent hover:underline"
+      >
+        Хяналт самбар руу очих →
+      </Link>
     </div>
   );
 }
@@ -165,8 +178,8 @@ function Stat({
   accent?: string;
 }) {
   return (
-    <div className="flex flex-col rounded-lg bg-black/[.03] px-3 py-2 dark:bg-white/[.05]">
-      <span className="text-xs text-zinc-500">{label}</span>
+    <div className="flex flex-col rounded-lg bg-surface-2 px-3 py-2">
+      <span className="text-xs text-muted">{label}</span>
       <span className={`text-lg font-semibold tabular-nums ${accent ?? ""}`}>
         {value}
       </span>
