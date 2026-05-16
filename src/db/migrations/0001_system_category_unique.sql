@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "uq_system_category" ON "categories" USING btree ("name","type") WHERE "categories"."user_id" is null and "categories"."is_system" = true;
