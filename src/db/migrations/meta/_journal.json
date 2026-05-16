@@ -15,6 +15,13 @@
       "when": 1778939082698,
       "tag": "0001_system_category_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778971008408,
+      "tag": "0002_glamorous_viper",
+      "breakpoints": true
     }
   ]
 }
