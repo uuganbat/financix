@@ -8,11 +8,13 @@
 
 import type { BankParser } from "./types";
 import { golomtParser } from "./golomt";
+import { khanParser } from "./khan";
 import { mbankParser } from "./mbank";
 import { tdbParser } from "./tdb";
 
 export const PARSERS: readonly BankParser[] = [
-  golomtParser, // .xlsx
+  golomtParser, // .xlsx (JasperReports)
+  khanParser, // .xlsx (Deposit Account Statement)
   mbankParser, // .xls (Oracle BIP)
   tdbParser, // .xls (Crystal Reports)
 ];
