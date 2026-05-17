@@ -29,7 +29,7 @@ export function AppShell({
   email,
   children,
 }: {
-  current?: "dashboard" | "import";
+  current?: "dashboard" | "transactions" | "import";
   email?: string;
   children: React.ReactNode;
 }) {
@@ -47,6 +47,12 @@ export function AppShell({
             <nav className="flex items-center gap-1 text-sm">
               <NavLink href="/" active={current === "dashboard"}>
                 Хяналт самбар
+              </NavLink>
+              <NavLink
+                href="/transactions"
+                active={current === "transactions"}
+              >
+                Гүйлгээ
               </NavLink>
               <NavLink href="/import" active={current === "import"}>
                 Импорт
