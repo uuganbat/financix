@@ -80,8 +80,22 @@ export const mbankParser: BankParser = {
     };
 
     let grid;
+    let template: "checking" | "savings" = "checking";
     try {
-      grid = readWorkbook(file).grid(SHEET);
+      const wb = readWorkbook(file);
+      grid = wb.grid(SHEET);
+      // Same Statement layout for current & savings accounts; the
+      // account kind is only distinguishable from the Oracle-BIP
+      // metadata: FN_RETAIL_SA_STATEMENT = Savings Account
+      // (FN_RETAIL_DD_STATEMENT = demand deposit / current).
+      if (wb.sheetNames.includes("XDO_METADATA")) {
+        const meta = wb
+          .grid("XDO_METADATA")
+          .flat()
+          .map((c) => text(c))
+          .join(" ");
+        if (/FN_RETAIL_SA_STATEMENT/i.test(meta)) template = "savings";
+      }
     } catch (e) {
       result.errors.push({
         row: 0,
@@ -183,6 +197,7 @@ export const mbankParser: BankParser = {
         bankRef,
         raw: {
           rowNumber: i + 1,
+          template,
           datetime: dtRaw,
           ref: refRaw,
           description: text(r[C_DESC]),

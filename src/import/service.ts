@@ -120,11 +120,20 @@ export async function importStatement(input: {
       };
     }
 
-    // TDB "Зээлийн дансны хуулга" rows carry raw.template='loan' →
-    // the account is a credit (loan) account, not checking.
-    const isLoan = parsed.transactions.some(
-      (t) => (t.raw as { template?: string }).template === "loan",
+    // Parsers tag rows with raw.template to reveal the account kind:
+    // 'loan' → credit, 'savings' → savings, else checking.
+    const templates = new Set(
+      parsed.transactions
+        .map((t) => (t.raw as { template?: string }).template)
+        .filter(Boolean),
     );
+    const accountType: "credit" | "savings" | "checking" = templates.has(
+      "loan",
+    )
+      ? "credit"
+      : templates.has("savings")
+        ? "savings"
+        : "checking";
 
     // Resolve / create the bank account (one per user+bank+last4).
     const last4 = parsed.accountLast4 ?? null;
@@ -145,11 +154,11 @@ export async function importStatement(input: {
     let accountId: string;
     if (existing.length > 0) {
       accountId = existing[0].id;
-      // A statement may reveal an existing account is a loan account.
-      if (isLoan) {
+      // A statement may reveal an existing account's true kind.
+      if (accountType !== "checking") {
         await tx
           .update(accounts)
-          .set({ accountType: "credit" })
+          .set({ accountType })
           .where(eq(accounts.id, accountId));
       }
     } else {
@@ -159,7 +168,7 @@ export async function importStatement(input: {
           userId,
           bank: BANK_ENUM[bank],
           accountLast4: last4,
-          accountType: isLoan ? "credit" : "checking",
+          accountType,
           name: last4
             ? `${BANK_LABEL[bank]} ••••${last4}`
             : BANK_LABEL[bank],

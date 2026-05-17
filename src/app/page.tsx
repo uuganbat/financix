@@ -51,17 +51,23 @@ export default async function DashboardPage() {
             <Card label="Гүйлгээ">{data.totals.count}</Card>
           </section>
 
-          {/* Balances & loans */}
+          {/* Balances, savings & loans */}
           {(data.balances.cash.length > 0 ||
+            data.balances.savings.length > 0 ||
             data.balances.loans.length > 0) && (
             <section className="flex flex-col gap-3">
               <h2 className="text-sm font-medium text-muted">
-                Үлдэгдэл ба зээл
+                Үлдэгдэл, хадгаламж, зээл
               </h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Card label="Бэлэн мөнгө">
                   <span className="text-positive">
                     {tug(data.balances.totalCash)}
+                  </span>
+                </Card>
+                <Card label="Хадгаламж">
+                  <span className="text-positive">
+                    {tug(data.balances.totalSavings)}
                   </span>
                 </Card>
                 <Card label="Зээлийн өр">
@@ -78,6 +84,12 @@ export default async function DashboardPage() {
                   <BalanceList
                     title="Дансны үлдэгдэл"
                     items={data.balances.cash}
+                  />
+                )}
+                {data.balances.savings.length > 0 && (
+                  <BalanceList
+                    title="Хадгаламж"
+                    items={data.balances.savings}
                   />
                 )}
                 {data.balances.loans.length > 0 && (

@@ -68,8 +68,10 @@ export type AccountBalance = {
 
 export type BalancesData = {
   cash: AccountBalance[];
+  savings: AccountBalance[];
   loans: AccountBalance[];
   totalCash: number;
+  totalSavings: number;
   totalDebt: number;
   interestPaid: number;
   principalPaid: number;
@@ -260,8 +262,10 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     as_of: string;
   }>;
   const cash: AccountBalance[] = [];
+  const savings: AccountBalance[] = [];
   const loans: AccountBalance[] = [];
   let totalCash = 0;
+  let totalSavings = 0;
   let totalDebt = 0;
   for (const r of balRows) {
     const entry: AccountBalance = {
@@ -274,12 +278,16 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     if (r.type === "credit") {
       loans.push(entry);
       totalDebt += r.balance;
+    } else if (r.type === "savings") {
+      savings.push(entry);
+      totalSavings += r.balance;
     } else {
       cash.push(entry);
       totalCash += r.balance;
     }
   }
   cash.sort((a, b) => b.balance - a.balance);
+  savings.sort((a, b) => b.balance - a.balance);
   loans.sort((a, b) => b.balance - a.balance);
 
   const ir = (interestRow as unknown as Array<{
@@ -299,8 +307,10 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     recent: recentRows,
     balances: {
       cash,
+      savings,
       loans,
       totalCash,
+      totalSavings,
       totalDebt,
       interestPaid: ir.interest_paid,
       principalPaid: ir.principal_paid,
