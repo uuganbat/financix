@@ -120,6 +120,12 @@ export async function importStatement(input: {
       };
     }
 
+    // TDB "Зээлийн дансны хуулга" rows carry raw.template='loan' →
+    // the account is a credit (loan) account, not checking.
+    const isLoan = parsed.transactions.some(
+      (t) => (t.raw as { template?: string }).template === "loan",
+    );
+
     // Resolve / create the bank account (one per user+bank+last4).
     const last4 = parsed.accountLast4 ?? null;
     const existing = await tx
@@ -139,6 +145,13 @@ export async function importStatement(input: {
     let accountId: string;
     if (existing.length > 0) {
       accountId = existing[0].id;
+      // A statement may reveal an existing account is a loan account.
+      if (isLoan) {
+        await tx
+          .update(accounts)
+          .set({ accountType: "credit" })
+          .where(eq(accounts.id, accountId));
+      }
     } else {
       const [created] = await tx
         .insert(accounts)
@@ -146,6 +159,7 @@ export async function importStatement(input: {
           userId,
           bank: BANK_ENUM[bank],
           accountLast4: last4,
+          accountType: isLoan ? "credit" : "checking",
           name: last4
             ? `${BANK_LABEL[bank]} ••••${last4}`
             : BANK_LABEL[bank],
@@ -219,6 +233,8 @@ export async function importStatement(input: {
         importId: imp.id,
         type: c.resolvedType,
         amount: t.amount.toFixed(2),
+        balanceAfter:
+          t.balanceAfter != null ? t.balanceAfter.toFixed(2) : null,
         currency:
           typeof t.raw.currency === "string" ? t.raw.currency : "MNT",
         description: t.description,

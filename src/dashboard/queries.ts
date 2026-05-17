@@ -58,19 +58,43 @@ export type RecentTxn = {
   categoryColor: string | null;
 };
 
+export type AccountBalance = {
+  bank: string;
+  bankLabel: string;
+  last4: string | null;
+  balance: number;
+  asOf: string;
+};
+
+export type BalancesData = {
+  cash: AccountBalance[];
+  loans: AccountBalance[];
+  totalCash: number;
+  totalDebt: number;
+  interestPaid: number;
+  principalPaid: number;
+};
+
 export type DashboardData = {
   totals: { count: number; income: number; expense: number; net: number };
   banks: BankGroup[];
   categories: CategorySlice[];
   recent: RecentTxn[];
+  balances: BalancesData;
 };
 
 export async function getDashboard(userId: string): Promise<DashboardData> {
   const income = sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amount} else 0 end), 0)::float8`;
   const expense = sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amount} else 0 end), 0)::float8`;
 
-  const [totalsRow, accountRows, categoryRows, recentRows] =
-    await Promise.all([
+  const [
+    totalsRow,
+    accountRows,
+    categoryRows,
+    recentRows,
+    balanceRows,
+    interestRow,
+  ] = await Promise.all([
       db
         .select({
           count: sql<number>`count(*)::int`,
@@ -153,6 +177,46 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
         )
         .orderBy(desc(transactions.date), desc(transactions.createdAt))
         .limit(30),
+
+      // Latest running balance per account. Tie-break by sheet
+      // rowNumber (monotone with the statement's running balance) —
+      // a bulk import gives every row the same created_at, so that
+      // alone is a non-deterministic ordering key.
+      db.execute(sql`
+        select distinct on (a.id)
+          a.bank,
+          a.account_last4 as last4,
+          a.account_type as type,
+          t.balance_after::float8 as balance,
+          t.date as as_of
+        from ${accounts} a
+        join ${transactions} t
+          on t.account_id = a.id
+          and t.deleted_at is null
+          and t.balance_after is not null
+        where a.user_id = ${userId} and a.deleted_at is null
+        order by a.id, t.date desc, t.time desc nulls last,
+          (t.raw_data->>'rowNumber')::int desc nulls last,
+          t.created_at desc
+      `),
+
+      // Interest vs principal actually paid on loan (credit) accounts.
+      // "хүү … төлөв" = interest paid; "зээл … төлөв" = principal.
+      // "хүү … кап" (capitalised) is excluded — it is not a payment.
+      db.execute(sql`
+        select
+          coalesce(sum(t.amount) filter (
+            where t.description ilike '%хүү%' and t.description ilike '%төлөв%'
+          ), 0)::float8 as interest_paid,
+          coalesce(sum(t.amount) filter (
+            where t.description ilike '%зээл%' and t.description ilike '%төлөв%'
+          ), 0)::float8 as principal_paid
+        from ${transactions} t
+        join ${accounts} a on a.id = t.account_id
+        where t.user_id = ${userId}
+          and t.deleted_at is null
+          and a.account_type = 'credit'
+      `),
     ]);
 
   const t = totalsRow[0] ?? { count: 0, income: 0, expense: 0 };
@@ -187,6 +251,42 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     });
   }
 
+  // Split accounts into spendable cash vs loan (credit) debt.
+  const balRows = balanceRows as unknown as Array<{
+    bank: string;
+    last4: string | null;
+    type: string;
+    balance: number;
+    as_of: string;
+  }>;
+  const cash: AccountBalance[] = [];
+  const loans: AccountBalance[] = [];
+  let totalCash = 0;
+  let totalDebt = 0;
+  for (const r of balRows) {
+    const entry: AccountBalance = {
+      bank: r.bank,
+      bankLabel: BANK_LABEL[r.bank] ?? r.bank,
+      last4: r.last4,
+      balance: r.balance,
+      asOf: r.as_of,
+    };
+    if (r.type === "credit") {
+      loans.push(entry);
+      totalDebt += r.balance;
+    } else {
+      cash.push(entry);
+      totalCash += r.balance;
+    }
+  }
+  cash.sort((a, b) => b.balance - a.balance);
+  loans.sort((a, b) => b.balance - a.balance);
+
+  const ir = (interestRow as unknown as Array<{
+    interest_paid: number;
+    principal_paid: number;
+  }>)[0] ?? { interest_paid: 0, principal_paid: 0 };
+
   return {
     totals: {
       count: t.count,
@@ -197,5 +297,13 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     banks: [...groups.values()].sort((a, b) => b.count - a.count),
     categories: categoryRows,
     recent: recentRows,
+    balances: {
+      cash,
+      loans,
+      totalCash,
+      totalDebt,
+      interestPaid: ir.interest_paid,
+      principalPaid: ir.principal_paid,
+    },
   };
 }

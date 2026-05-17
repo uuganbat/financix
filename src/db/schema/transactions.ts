@@ -36,6 +36,10 @@ export const transactions = pgTable(
     amount: numeric({ precision: 18, scale: 2 }).notNull(),
     currency: varchar({ length: 3 }).notNull().default("MNT"),
 
+    // Running balance after this txn, when the statement provides one
+    // (Khan/MBank/TDB). Golomt statements carry no per-row balance → null.
+    balanceAfter: numeric({ precision: 18, scale: 2 }),
+
     description: text().notNull(),
     displayName: varchar({ length: 500 }),
     notes: text(),

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getDashboard } from "@/dashboard/queries";
+import {
+  BANK_LABEL,
+  getDashboard,
+  type AccountBalance,
+} from "@/dashboard/queries";
 import { AppShell } from "./_components/app-shell";
 
 const tug = (n: number) =>
@@ -46,6 +50,49 @@ export default async function DashboardPage() {
             </Card>
             <Card label="Гүйлгээ">{data.totals.count}</Card>
           </section>
+
+          {/* Balances & loans */}
+          {(data.balances.cash.length > 0 ||
+            data.balances.loans.length > 0) && (
+            <section className="flex flex-col gap-3">
+              <h2 className="text-sm font-medium text-muted">
+                Үлдэгдэл ба зээл
+              </h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Card label="Бэлэн мөнгө">
+                  <span className="text-positive">
+                    {tug(data.balances.totalCash)}
+                  </span>
+                </Card>
+                <Card label="Зээлийн өр">
+                  <span className="text-negative">
+                    {tug(data.balances.totalDebt)}
+                  </span>
+                </Card>
+                <Card label="Төлсөн хүү">
+                  {tug(data.balances.interestPaid)}
+                </Card>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {data.balances.cash.length > 0 && (
+                  <BalanceList
+                    title="Дансны үлдэгдэл"
+                    items={data.balances.cash}
+                  />
+                )}
+                {data.balances.loans.length > 0 && (
+                  <BalanceList
+                    title="Зээл"
+                    items={data.balances.loans}
+                    negative
+                    footer={`Төлсөн үндсэн зээл: ${tug(
+                      data.balances.principalPaid,
+                    )}`}
+                  />
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Banks */}
           <section className="flex flex-col gap-3">
@@ -144,6 +191,11 @@ export default async function DashboardPage() {
                       <td className="whitespace-nowrap px-4 py-3 text-muted">
                         {t.date}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
+                          {BANK_LABEL[t.bank] ?? t.bank}
+                        </span>
+                      </td>
                       <td className="max-w-[1px] truncate px-4 py-3">
                         {t.description}
                       </td>
@@ -189,6 +241,50 @@ function Card({
     <div className="flex flex-col gap-1 rounded-2xl border border-border bg-surface p-5">
       <span className="text-xs text-muted">{label}</span>
       <span className="text-xl font-semibold tabular-nums">{children}</span>
+    </div>
+  );
+}
+
+function BalanceList({
+  title,
+  items,
+  negative,
+  footer,
+}: {
+  title: string;
+  items: AccountBalance[];
+  negative?: boolean;
+  footer?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
+      <h3 className="font-semibold">{title}</h3>
+      <div className="flex flex-col gap-2">
+        {items.map((a) => (
+          <div
+            key={`${a.bank}-${a.last4}`}
+            className="flex items-center justify-between text-sm"
+          >
+            <span className="text-muted">
+              {a.bankLabel}
+              {a.last4 ? ` ••${a.last4}` : ""}
+              <span className="ml-2 text-xs text-muted/70">{a.asOf}</span>
+            </span>
+            <span
+              className={`tabular-nums ${
+                negative ? "text-negative" : "font-medium"
+              }`}
+            >
+              {tug(a.balance)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {footer && (
+        <p className="border-t border-border pt-3 text-xs text-muted">
+          {footer}
+        </p>
+      )}
     </div>
   );
 }
