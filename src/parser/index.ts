@@ -10,9 +10,14 @@ import type { BankParser } from "./types";
 import { golomtParser } from "./golomt";
 import { khanParser } from "./khan";
 import { mbankParser } from "./mbank";
+import { mbankLoanParser } from "./mbank-loan";
 import { tdbParser } from "./tdb";
 
 export const PARSERS: readonly BankParser[] = [
+  // Must precede golomtParser: its detect() matches the loose substring
+  // "ДАНСНЫ ХУУЛГА", which the MBank-loan title "ЗЭЭЛИЙН ДАНСНЫ ХУУЛГА"
+  // also contains. mbankLoanParser.detect is strict (title + "М банк").
+  mbankLoanParser, // .xlsx (loan, single Sheet1)
   golomtParser, // .xlsx (JasperReports)
   khanParser, // .xlsx (Deposit Account Statement)
   mbankParser, // .xls (Oracle BIP)
