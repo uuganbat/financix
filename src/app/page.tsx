@@ -7,6 +7,7 @@ import {
   type AccountBalance,
 } from "@/dashboard/queries";
 import { AppShell } from "./_components/app-shell";
+import { BankBadge } from "./_components/bank-badge";
 
 const tug = (n: number) =>
   `${Math.round(n).toLocaleString("en-US")}₮`;
@@ -117,8 +118,11 @@ export default async function DashboardPage() {
                   key={b.bank}
                   className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5"
                 >
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="font-semibold">{b.label}</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 font-semibold">
+                      <BankBadge bank={b.bank} />
+                      {b.label}
+                    </h3>
                     <span className="text-xs text-muted">
                       {b.count} гүйлгээ
                     </span>
@@ -204,7 +208,11 @@ export default async function DashboardPage() {
                         {t.date}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
+                        <span
+                          className="flex items-center gap-1.5 text-xs text-muted"
+                          title={BANK_LABEL[t.bank] ?? t.bank}
+                        >
+                          <BankBadge bank={t.bank} size={20} />
                           {BANK_LABEL[t.bank] ?? t.bank}
                         </span>
                       </td>
@@ -277,10 +285,13 @@ function BalanceList({
             key={`${a.bank}-${a.last4}`}
             className="flex items-center justify-between text-sm"
           >
-            <span className="text-muted">
-              {a.bankLabel}
-              {a.last4 ? ` ••${a.last4}` : ""}
-              <span className="ml-2 text-xs text-muted/70">{a.asOf}</span>
+            <span className="flex items-center gap-2 text-muted">
+              <BankBadge bank={a.bank} size={22} />
+              <span>
+                {a.bankLabel}
+                {a.last4 ? ` ••${a.last4}` : ""}
+                <span className="ml-2 text-xs text-muted/70">{a.asOf}</span>
+              </span>
             </span>
             <span
               className={`tabular-nums ${

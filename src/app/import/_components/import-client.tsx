@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ImportSummary } from "@/import/service";
+import { BankBadge } from "@/app/_components/bank-badge";
 
 const tug = (n: number) =>
   `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}₮`;
@@ -90,8 +91,9 @@ function Results({ r }: { r: ImportSummary }) {
       )}
 
       <div className="flex flex-wrap gap-x-8 gap-y-1 text-muted">
-        <span>
-          Банк: <b className="text-foreground">{r.bank}</b>
+        <span className="flex items-center gap-1.5">
+          Банк: <BankBadge bank={r.bank} size={20} />
+          <b className="text-foreground">{r.bank}</b>
           {r.accountLast4 ? ` ••••${r.accountLast4}` : ""}
         </span>
         {r.dateRange && (

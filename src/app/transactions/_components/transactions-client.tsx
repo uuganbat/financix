@@ -7,6 +7,7 @@ import type {
   TxnPage,
   TxnRow,
 } from "@/transactions/queries";
+import { BankBadge } from "@/app/_components/bank-badge";
 
 const tug = (n: number) => `${Math.round(n).toLocaleString("en-US")}₮`;
 
@@ -143,14 +144,14 @@ export function TransactionsClient({
                   {r.date}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
-                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
+                  <span
+                    className="flex items-center gap-1.5 text-xs text-muted"
+                    title={r.bankLabel}
+                  >
+                    <BankBadge bank={r.bank} size={20} />
                     {r.bankLabel}
+                    {r.accountLast4 && <span>••{r.accountLast4}</span>}
                   </span>
-                  {r.accountLast4 && (
-                    <span className="ml-1 text-xs text-muted">
-                      ••{r.accountLast4}
-                    </span>
-                  )}
                 </td>
                 <td className="max-w-[22rem] truncate px-4 py-3">
                   {r.description}
